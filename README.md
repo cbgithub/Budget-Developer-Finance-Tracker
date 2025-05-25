@@ -20,7 +20,7 @@ An interactive, free-to-use budgeting tool powered by Google Sheets and Google A
 2. **Authorize the Apps Script** (standard Google permissions required).
 3. Use the buttons/UI to start managing your finances!
 
-> 📝 [Make a Copy of the Sheet Here](https://link-to-your-copy)
+> 📝 [Make a Copy of the Sheet Here](https://docs.google.com/document/d/1b7ealiv39Xj1qFEU54kN1WugNw1lknocrWVq6L4Kw-M/edit?usp=sharing)
 
 ---
 
