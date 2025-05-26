@@ -24,12 +24,12 @@ An interactive, free-to-use budgeting tool powered by Google Sheets and Google A
 
 ---
 
-## 🙏 Pay What You Want
+## 🙏🏾 Pay What You Want
 
 This project is 100% free. If it brings value to your life, consider donating:
 
-**👉 [Support on Gumroad](https://thebudgetdeveloper.gumroad.com/l/pyonol)**  
-**👉 [Buy Me a Coffee](https://buymeacoffee.com/thebudgetdeveloper)**
+**👉🏾 [Support on Gumroad](https://thebudgetdeveloper.gumroad.com/l/pyonol)**  
+**👉🏾 [Buy Me a Coffee](https://buymeacoffee.com/thebudgetdeveloper)**
 
 Your support helps maintain and grow this project.
 
