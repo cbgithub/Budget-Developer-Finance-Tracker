@@ -481,7 +481,7 @@ function deleteSavingsByTransactionId(transactionId){
 function getSummaryData(month, year) {
 
  
- 
+
 
   month = month == 'all' ? 'all' : parseInt(month);
   year = year == 'all' ? 'all' : parseInt(year);
@@ -600,7 +600,8 @@ function getSummaryData(month, year) {
     overBudgetCategories,
     underBudgetCategories,
     spendingData,
-    recentTransactions
+    recentTransactions,
+    badgeSummary: getBadgeProgressSummary()
   };
 
   return output;
@@ -836,7 +837,56 @@ function getBadges() {
 }
 
 
-function getFilteredBadgesWithCount(searchTerm, startIndex, itemsPerPage, loadAll) {
+
+function getBadgeProgressSummary() {
+ 
+
+
+  const badgeData = badgeSheet.getDataRange().getValues();
+  const earnedData = badgesEarnedSheet.getDataRange().getValues();
+
+  const headers = badgeData.shift();
+  const earnedHeaders = earnedData.shift();
+
+  const badges = badgeData.map(row => {
+    const obj = {};
+    headers.forEach((key, i) => obj[key] = row[i]);
+    return obj;
+  });
+
+  const earnedBadgeIds = new Set(earnedData.map(row => row[1]));
+
+  const total = badges.length;
+  let earned = 0;
+  const groups = {};
+
+  badges.forEach(badge => {
+    const group = badge.criteriaType || 'Other';
+    const displayName = badge.displayName;
+    const isEarned = earnedBadgeIds.has(badge['Badge Id']);
+
+    if (!groups[group]) {
+      groups[group] = { total: 0, earned: 0, name: displayName };
+    }
+
+    groups[group].total++;
+    if (isEarned) {
+      groups[group].earned++;
+      earned++;
+    }
+  });
+
+
+
+  return {
+    totalBadges: total,
+    earnedBadges: earned,
+    groups: groups
+  };
+}
+
+
+function getFilteredBadgesWithCount(searchTerm, startIndex, itemsPerPage, loadAll = false) {
 
   const data = badgeSheet.getDataRange().getValues();
   const earnedRows = badgesEarnedSheet ? badgesEarnedSheet.getDataRange().getValues() : []; // All earned rows
@@ -848,7 +898,7 @@ function getFilteredBadgesWithCount(searchTerm, startIndex, itemsPerPage, loadAl
 
   startIndex = startIndex == null || startIndex == '' ? 0 : startIndex;
 
-  itemsPerPage = itemsPerPage == null || itemsPerPage == '' ? 5 : itemsPerPage;
+  itemsPerPage = itemsPerPage == null || itemsPerPage == '' ? 10: itemsPerPage;
 
 
   const rows = data.slice(1); // Exclude header row
@@ -864,13 +914,13 @@ function getFilteredBadgesWithCount(searchTerm, startIndex, itemsPerPage, loadAl
   });
 
 
-
+ 
 
   const filteredData = rows.filter(row => {
 
 
 
-    const matchSearch = searchTerm === "" || row[3].toLowerCase().includes(searchTerm.toLowerCase());
+    const matchSearch = searchTerm === "" || row[3].toLowerCase().replaceAll(' ', '').includes(searchTerm.toLowerCase().replaceAll(' ',''));
 
     return matchSearch;
   });
@@ -909,6 +959,8 @@ function getFilteredBadgesWithCount(searchTerm, startIndex, itemsPerPage, loadAl
     badgesEarnedSheet.getRange(badgesEarnedSheet.getLastRow() + 1, 1, newEarnedBadges.length, 4).setValues(newEarnedBadges);
   }
   let output = { data: badges, totalRecords, newEarnedBadges: newEarnedBadges };
+
+
 
 
  

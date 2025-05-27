@@ -264,7 +264,7 @@
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light">
     <div class="container mt-4">
-      <a class="navbar-brand " href="#">  <!--<img src="https://drive.google.com/thumbnail?id=1h4IV6BIqnI7at2AoQuy_TxQYXlmVAGC8&sz=w1000" style="display: inline-block;" width="140px" height="50px">-->Budget Developer App</a>
+      <a class="navbar-brand " href="#" onclick="loadPage('summary')">  <img src="https://drive.google.com/thumbnail?id=1h4IV6BIqnI7at2AoQuy_TxQYXlmVAGC8&sz=w500" style="display: inline-block;" width="100px" height="40px"> <h6>Finance Tracker</h6></a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
@@ -695,6 +695,7 @@
     let plansCache = [];
     let categoriesCache = [];
     let transactionsCache = [];
+    let badges = [];
   
     const cacheExpiry = 120000; 
     let summaryCache = {};
@@ -891,6 +892,17 @@ function renderSummary(){
           </div>
         </div>
         <div class="row mt-3">
+           <!-- Badge Progress -->
+          <div class="col-md-7 mt-3">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">🏆 Badge Progress</h5>
+                <div id="badge-summary-section">
+                  ${renderBadgeProgressSummary(data.badgeSummary, true)}
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- Spending Chart -->
           <div class="col-md-5">
             <div class="card">
@@ -905,6 +917,7 @@ function renderSummary(){
               </div>
             </div>
           </div>
+        
                <!-- recent transactions -->
           <div class="col-md-4">
             <div class="card">
@@ -952,6 +965,7 @@ function renderSummary(){
               </div>
             </div>
           </div>
+         
         </div>
       `;
       $('#main-content').html(content);
@@ -2350,28 +2364,86 @@ function loadCategories(){
 }
 
 
+
+
+
+
 function loadBadges(onlyRender = false) {
   showSpinner();
 
-      if (!onlyRender) {
+  if (!onlyRender) {
     const content = `
       <h3>Badges</h3>
-        <input type="text" id="badgeSearch" class="form-control mb-3" placeholder="Search badges"
-        onkeyup="goToBadgePage(1)">
+      <div id="badge-progress-summary"></div>
+      <input type="text" id="badgeSearch" class="form-control mb-3" placeholder="Search badges"
+      onkeyup="goToBadgePage(1), ${onlyRender}">` + `
+      <select id="badgeGroupFilter" class="form-control mb-3">
+        <option value="all">All Groups</option>
+        <option value="budgetsCreated">Budgets</option>
+        <option value="transactionsLogged">Transactions</option>
+        <option value="incomeLogged">Income</option>
+        <option value="savingsLogged">Savings</option>
+      </select>
+
       <div id="badges" class="row mt-3"></div>
-                  <!-- Pagination Controls -->
-    <div id="paginationControls" class="d-flex justify-content-between align-items-center mt-3 pagination-spacing">
-      <button id="prevPage" class="btn btn-secondary" disabled onclick="goToBadgePage(currentPage - 1)">Previous</button>
-      <span>Page <input id="currentPageInput" type="number" value="1" min="1" style="width: 50px;" onchange="goToSpecificBadgePage()"> of <span id="totalPages">1</span></span>
-      <button id="nextPage" class="btn btn-secondary" disabled onclick="goToBadgePage(currentPage + 1)">Next</button>
-    </div>
+      <div id="paginationControls" class="d-flex justify-content-between align-items-center mt-3 pagination-spacing">` + 
+        `<button id="prevPage" class="btn btn-secondary" disabled onclick="goToBadgePage(currentPage - 1 , ${onlyRender})">Previous</button>` +
+        `<span>Page <input id="currentPageInput" type="number" value="1" min="1" style="width: 50px;" onchange="goToSpecificBadgePage()"> of <span id="totalPages">1</span></span>
+        <button id="nextPage" class="btn btn-secondary" disabled onclick="goToBadgePage(currentPage + 1, ${onlyRender})">Next</button>
+      </div>
     `;
-     
     $('#main-content').html(content);
-     }
-    goToBadgePage(1, true); // Load the first page by default
- 
+   
+  }
+
+
+
+  google.script.run.withSuccessHandler(renderBadgeProgressSummary).getBadgeProgressSummary();
+  goToBadgePage(1, onlyRender);
 }
+
+function renderBadgeProgressSummary(summary, isSummaryPage = false) {
+  if (!summary) return;
+
+  const { totalBadges, earnedBadges, groups } = summary;
+  let html = `
+    <div class="card mb-4">
+      <div class="card-body"> `;
+
+      if(!isSummaryPage){
+        html += `<h5 class="card-title">🏆 Badge Progress Summary</h5>
+        <p><strong>${earnedBadges}</strong> of <strong>${totalBadges}</strong> badges earned</p>`;
+      }
+      else{
+         html += `<p><strong>${earnedBadges}</strong> of <strong>${totalBadges}</strong> badges earned</p>`;
+      }
+        
+  
+
+  for (const [group, data] of Object.entries(groups)) {
+    const percent = Math.round((data.earned / data.total) * 100);
+    html += `
+      <div class="mb-2">
+        <strong>${data.name}</strong> — ${data.earned}/${data.total}
+        <div class="progress">
+          <div class="progress-bar" role="progressbar" style="width: ${percent}%;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100">${percent}%</div>
+        </div>
+      </div>
+    `;
+  }
+
+  html += `</div></div>`;
+  if(isSummaryPage){
+    return html;
+
+  }
+ 
+  document.getElementById('badge-progress-summary').innerHTML = html;
+  
+  
+  
+}
+
 
 
 
@@ -2385,10 +2457,18 @@ function formatEarnedDate(dateString) {
 }
 
 function renderBadges(badges) {
+
+  const selectedGroup = document.getElementById('badgeGroupFilter')?.value || 'all';
+
   const container = $('#badges');
   container.empty();
+  
 
-  badges.forEach(badge => {
+  const filtered = selectedGroup === 'all' 
+    ? badges 
+    : badges.filter(b => b.criteriaType === selectedGroup);
+
+  filtered.forEach(badge => {
     const earnedDateText = badge.earned ? `<p class="mt-2" style="font-size: 0.9rem; color: lightgray;">${formatEarnedDate(badge.earnedDate)}</p>` : '';
 
     const badgeCard = `
@@ -2410,7 +2490,14 @@ function renderBadges(badges) {
     `;
     container.append(badgeCard);
   });
+
+  // ✅ Attach after inserting the HTML
+  document.getElementById('badgeGroupFilter')?.addEventListener('change', function () {
+    renderBadges(badges);
+  });
 }
+
+
 
 
 
@@ -2581,9 +2668,10 @@ function goToBadgePage(page, onlyRender = false){
  
    if (page < 1 || page > totalPages) return;
   const searchTerm = document.getElementById('badgeSearch') ? document.getElementById('badgeSearch').value : '';
+
    showSpinner();
 
-  const startIndex = (page - 1) * itemsPerPage;
+  const startIndex = (page - 1) * 10;
 
   // Fetch paginated data
   google.script.run.withSuccessHandler(function(response) {
@@ -2591,8 +2679,9 @@ function goToBadgePage(page, onlyRender = false){
     if (response && response.data && response.data.length > 0) {
      
       badges = response.data; // Update plans with paginated data
+
       newlyEarnedBadges = response.newEarnedBadges;
-      totalPages = Math.ceil(response.totalRecords / itemsPerPage);
+      totalPages = Math.ceil(response.totalRecords / 10);
       renderBadges(badges);
       updatePaginationControls(page, totalPages); // Update pagination controls
 
@@ -2613,7 +2702,7 @@ function goToBadgePage(page, onlyRender = false){
    .withFailureHandler(function(error) {
       hideSpinner(); // Ensure spinner is hidden on failure
       $('#badges').html('<li class="list-group-item text-danger">Error loading badge data. Please try again later.</li>');
-    }).getFilteredBadgesWithCount(searchTerm, startIndex, itemsPerPage, onlyRender);
+    }).getFilteredBadgesWithCount(searchTerm, startIndex, null, onlyRender);
 
 }
 
